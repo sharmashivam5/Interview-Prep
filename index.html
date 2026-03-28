@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prep Tracker">
+<meta name="theme-color" content="#0f172a">
+<title>Interview Prep Tracker</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #273548;
+    --border: #334155;
+    --teal: #2dd4bf;
+    --teal-dim: #0f766e;
+    --teal-bg: #0d3330;
+    --amber: #fbbf24;
+    --amber-bg: #2d1f06;
+    --red: #f87171;
+    --red-bg: #2d1010;
+    --green: #4ade80;
+    --green-bg: #0a2d16;
+    --blue: #60a5fa;
+    --blue-bg: #0d1f3c;
+    --purple: #a78bfa;
+    --purple-bg: #1a1030;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --safe-top: env(safe-area-inset-top, 44px);
+    --safe-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  /* TOP NAV */
+  .topbar { background: var(--bg); padding: calc(var(--safe-top) + 8px) 16px 12px; position: sticky; top: 0; z-index: 100; border-bottom: 0.5px solid var(--border); }
+  .topbar-inner { display: flex; align-items: center; justify-content: space-between; }
+  .app-title { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .app-title span { color: var(--teal); }
+  .prog-mini { text-align: right; }
+  .prog-mini-pct { font-size: 20px; font-weight: 700; color: var(--teal); line-height: 1; }
+  .prog-mini-lbl { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  /* PROGRESS BAR */
+  .prog-section { padding: 12px 16px 0; }
+  .prog-bar-bg { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .prog-bar-fill { height: 100%; background: var(--teal); border-radius: 3px; transition: width 0.4s ease; }
+  .prog-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-bottom: 4px; }
+  .prog-stat { background: var(--surface); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
+  .prog-stat .n { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1; }
+  .prog-stat .l { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+  /* PHASE TABS */
+  .tab-scroll { overflow-x: auto; padding: 12px 16px 0; display: flex; gap: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tab-scroll::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; white-space: nowrap; }
+  .tab-btn.active { background: var(--teal-bg); color: var(--teal); border-color: var(--teal-dim); }
+
+  /* CONTENT */
+  .content { padding: 12px 16px calc(var(--safe-bottom) + 80px); }
+
+  /* PHASE BLOCK */
+  .phase-block { margin-bottom: 6px; }
+  .phase-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px; background: var(--surface); border-radius: var(--radius); margin-bottom: 2px; cursor: pointer; }
+  .phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .phase-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .phase-weeks { font-size: 11px; color: var(--text3); }
+  .phase-prog { font-size: 12px; font-weight: 600; color: var(--teal); }
+  .phase-chevron { font-size: 14px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+  .phase-chevron.open { transform: rotate(90deg); }
+  .phase-sections { display: none; padding: 0 0 8px; }
+  .phase-sections.open { display: block; }
+
+  /* SECTION */
+  .section-block { background: var(--surface); border-radius: var(--radius); margin-bottom: 4px; overflow: hidden; }
+  .section-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; }
+  .section-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .imp-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; flex-shrink: 0; }
+  .imp-high { background: var(--red-bg); color: var(--red); }
+  .imp-med { background: var(--amber-bg); color: var(--amber); }
+  .section-chevron { font-size: 13px; color: var(--text3); transition: transform 0.2s; }
+  .section-chevron.open { transform: rotate(90deg); }
+  .section-body { display: none; border-top: 0.5px solid var(--border); }
+  .section-body.open { display: block; }
+
+  /* TOPIC ROW */
+  .topic-row { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; border-bottom: 0.5px solid var(--border); cursor: pointer; }
+  .topic-row:last-child { border-bottom: none; }
+  .topic-row:active { background: var(--surface2); }
+  .check-box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check-box.done { background: var(--teal); border-color: var(--teal); }
+  .check-box.done::after { content: ''; width: 11px; height: 7px; border-left: 2.5px solid #0f172a; border-bottom: 2.5px solid #0f172a; transform: rotate(-45deg) translateY(-1px); display: block; }
+  .topic-content { flex: 1; min-width: 0; }
+  .topic-name { font-size: 13px; color: var(--text); line-height: 1.4; font-weight: 500; }
+  .topic-sub { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 7px; }
+  .tag-learn { background: var(--green-bg); color: var(--green); }
+  .tag-practice { background: var(--blue-bg); color: var(--blue); }
+  .tag-e { background: var(--green-bg); color: var(--green); }
+  .tag-m { background: var(--amber-bg); color: var(--amber); }
+  .tag-h { background: var(--red-bg); color: var(--red); }
+
+  /* BOTTOM NAV */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 0.5px solid var(--border); padding: 10px 0 calc(var(--safe-bottom) + 4px); display: flex; z-index: 100; }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: var(--text3); font-weight: 500; }
+  .nav-btn.active .nav-label { color: var(--teal); }
+  .nav-btn.active .nav-icon { filter: none; }
+
+  /* INSTALL BANNER */
+  .install-banner { margin: 12px 16px 0; background: var(--teal-bg); border: 1px solid var(--teal-dim); border-radius: var(--radius); padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .install-banner.hidden { display: none; }
+  .install-text { flex: 1; }
+  .install-text strong { font-size: 13px; color: var(--teal); display: block; margin-bottom: 3px; }
+  .install-text p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .install-close { font-size: 18px; color: var(--text3); cursor: pointer; padding: 0 4px; flex-shrink: 0; }
+
+  /* EMPTY / ALL DONE */
+  .celebrate { text-align: center; padding: 40px 20px; }
+  .celebrate .big { font-size: 48px; margin-bottom: 12px; }
+  .celebrate p { color: var(--text2); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="app-title">Shivam's <span>Prep</span></div>
+    <div class="prog-mini">
+      <div class="prog-mini-pct" id="topPct">0%</div>
+      <div class="prog-mini-lbl">complete</div>
+    </div>
+  </div>
+</div>
+
+<div id="installBanner" class="install-banner">
+  <div class="install-text">
+    <strong>Add to Home Screen for best experience</strong>
+    <p>Tap the Share button in Safari, then "Add to Home Screen". Your progress saves on your phone.</p>
+  </div>
+  <div class="install-close" onclick="dismissBanner()">x</div>
+</div>
+
+<div class="prog-section">
+  <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill" style="width:0%"></div></div>
+  <div class="prog-stats">
+    <div class="prog-stat"><div class="n" id="statDone">0</div><div class="l">Done</div></div>
+    <div class="prog-stat"><div class="n" id="statLeft">0</div><div class="l">Left</div></div>
+    <div class="prog-stat"><div class="n" id="statTotal">0</div><div class="l">Total</div></div>
+    <div class="prog-stat"><div class="n">12w</div><div class="l">Timeline</div></div>
+  </div>
+</div>
+
+<div class="tab-scroll" id="tabScroll"></div>
+<div class="content" id="mainContent"></div>
+
+<div class="bottom-nav">
+  <div class="nav-btn active" onclick="switchTab('all',this)">
+    <div class="nav-icon">&#9783;</div>
+    <div class="nav-label">All</div>
+  </div>
+  <div class="nav-btn" onclick="switchTab('pending',this)">
+    <div class="nav-icon">&#9744;</div>
+    <div class="nav-label">Pending</div>
+  </div>
+  <div class="nav-btn" onclick="switchTab('done',this)">
+    <div class="nav-icon">&#10003;</div>
+    <div class="nav-label">Done</div>
+  </div>
+  <div class="nav-btn" onclick="switchTab('priority',this)">
+    <div class="nav-icon">&#9733;</div>
+    <div class="nav-label">Priority</div>
+  </div>
+</div>
+
+<script>
+const PHASES = [
+  { id:'p1', color:'#2dd4bf', label:'Phase 1 — Java Core', weeks:'Wks 1–3', sections:[
+    { icon:'J', iconBg:'#0d3330', iconColor:'#2dd4bf', title:'Java fundamentals', imp:'high', topics:[
+      { type:'learn', name:'OOP concepts', sub:'Classes & objects · Abstraction · Encapsulation · Inheritance · Polymorphism · Interfaces vs abstract classes' },
+      { type:'learn', name:'Java memory model', sub:'Stack vs heap · Object lifecycle · Garbage collection (G1, CMS) · Memory leaks' },
+      { type:'learn', name:'Collections framework', sub:'ArrayList vs LinkedList · HashMap internals · TreeMap · LinkedHashMap · ConcurrentHashMap · Set · Queue' },
+      { type:'learn', name:'Generics & type safety', sub:'Bounded wildcards · Type erasure · Generic methods' },
+      { type:'learn', name:'Exception handling', sub:'Checked vs unchecked · try-with-resources · Custom exceptions · Exception hierarchy' },
+      { type:'learn', name:'String handling', sub:'String pool · StringBuilder vs StringBuffer · String immutability · intern()' },
+      { type:'learn', name:'Java 8+ features', sub:'Lambdas · Stream API · Optional · Method references · Functional interfaces · Default methods' },
+      { type:'learn', name:'Java 11–21 features', sub:'var keyword · Records · Sealed classes · Pattern matching · Text blocks · Virtual threads' },
+      { type:'learn', name:'Multithreading & concurrency', sub:'Thread lifecycle · ExecutorService · synchronized · volatile · AtomicInteger · CountDownLatch · Deadlock prevention' },
+      { type:'learn', name:'Design patterns', sub:'Singleton · Factory · Builder · Strategy · Observer · Decorator · Proxy · Template Method' },
+    ]},
+  ]},
+  { id:'p2', color:'#60a5fa', label:'Phase 2 — DSA', weeks:'Wks 2–6', sections:[
+    { icon:'A', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Arrays & strings', imp:'high', topics:[
+      { type:'practice', name:'Two pointers', sub:'Two Sum · 3Sum · Container With Most Water · Trapping Rain Water', diff:['E','M','M','H'] },
+      { type:'practice', name:'Sliding window', sub:'Longest Substring Without Repeating · Minimum Window Substring · Max Consecutive Ones', diff:['M','H','M'] },
+      { type:'practice', name:'Prefix sum / Kadane\'s', sub:'Maximum Subarray · Product of Array Except Self · Subarray Sum Equals K', diff:['E','M','M'] },
+      { type:'practice', name:'Matrix manipulation', sub:'Rotate Image · Spiral Matrix · Set Matrix Zeroes', diff:['M','M','M'] },
+    ]},
+    { icon:'L', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Linked lists', imp:'high', topics:[
+      { type:'practice', name:'Fast & slow pointers', sub:'Linked List Cycle · Middle of Linked List · Find Duplicate Number', diff:['E','E','M'] },
+      { type:'practice', name:'Reversal patterns', sub:'Reverse Linked List · Reverse Nodes in k-Group · Palindrome Linked List', diff:['E','H','M'] },
+      { type:'practice', name:'Merge & sort', sub:'Merge Two Sorted Lists · Sort List · Merge k Sorted Lists', diff:['E','M','H'] },
+    ]},
+    { icon:'S', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Stacks & queues', imp:'high', topics:[
+      { type:'practice', name:'Monotonic stack', sub:'Next Greater Element · Daily Temperatures · Largest Rectangle in Histogram', diff:['E','M','H'] },
+      { type:'practice', name:'Queue problems', sub:'Implement Queue Using Stacks · Sliding Window Maximum · Design Circular Queue', diff:['E','H','M'] },
+      { type:'learn', name:'Stack internals', sub:'Call stack simulation · Parenthesis matching · Expression evaluation' },
+    ]},
+    { icon:'T', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Trees & BST', imp:'high', topics:[
+      { type:'learn', name:'Tree traversals', sub:'Inorder · Preorder · Postorder · Level-order BFS · DFS recursive & iterative' },
+      { type:'practice', name:'BST operations', sub:'Validate BST · Lowest Common Ancestor · Kth Smallest in BST · Delete Node', diff:['M','M','M','M'] },
+      { type:'practice', name:'Tree construction', sub:'Construct BT from Pre+Inorder · Serialize & Deserialize BT', diff:['M','H'] },
+      { type:'practice', name:'Path problems', sub:'Binary Tree Max Path Sum · Path Sum II · Diameter of Binary Tree', diff:['H','M','E'] },
+    ]},
+    { icon:'G', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Graphs', imp:'high', topics:[
+      { type:'learn', name:'Graph representations', sub:'Adjacency list vs matrix · Directed vs undirected · Weighted graphs' },
+      { type:'practice', name:'BFS problems', sub:'Number of Islands · Rotting Oranges · Word Ladder · Shortest Path in Binary Matrix', diff:['M','M','H','M'] },
+      { type:'practice', name:'DFS & backtracking', sub:'Permutations · Subsets · Word Search · N-Queens · Combination Sum', diff:['M','M','M','H','M'] },
+      { type:'practice', name:'Topological sort', sub:'Course Schedule · Course Schedule II · Alien Dictionary', diff:['M','M','H'] },
+    ]},
+    { icon:'H', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Heaps & priority queues', imp:'med', topics:[
+      { type:'learn', name:'Min-heap & max-heap', sub:'Heap operations · heapify · PriorityQueue in Java' },
+      { type:'practice', name:'Top-K problems', sub:'Kth Largest Element · Top K Frequent Elements · K Closest Points', diff:['M','M','M'] },
+      { type:'practice', name:'Merge K sorted', sub:'Merge K Sorted Lists · Find Median from Data Stream', diff:['H','H'] },
+    ]},
+    { icon:'D', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Dynamic programming', imp:'high', topics:[
+      { type:'learn', name:'DP fundamentals', sub:'Memoization vs tabulation · State definition · Recurrence relations' },
+      { type:'practice', name:'1D DP', sub:'Climbing Stairs · House Robber · Longest Increasing Subsequence · Coin Change', diff:['E','M','M','M'] },
+      { type:'practice', name:'2D DP', sub:'Unique Paths · Edit Distance · Longest Common Subsequence', diff:['M','H','M'] },
+      { type:'practice', name:'Interval DP', sub:'Burst Balloons · Palindrome Partitioning', diff:['H','M'] },
+    ]},
+    { icon:'B', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Binary search', imp:'high', topics:[
+      { type:'learn', name:'Binary search patterns', sub:'Classic · On answer space · Rotated array · Finding boundaries' },
+      { type:'practice', name:'Practice problems', sub:'Search in Rotated Array · Find First & Last Position · Median of Two Sorted Arrays · Koko Eating Bananas', diff:['M','M','H','M'] },
+    ]},
+    { icon:'R', iconBg:'#0d1f3c', iconColor:'#60a5fa', title:'Recursion & backtracking', imp:'med', topics:[
+      { type:'learn', name:'Recursion fundamentals', sub:'Base case · Call stack · Tail recursion · Space complexity' },
+      { type:'practice', name:'Backtracking problems', sub:'Letter Combinations · Sudoku Solver · Generate Parentheses · Palindrome Partitioning', diff:['M','H','M','M'] },
+    ]},
+  ]},
+  { id:'p3', color:'#fbbf24', label:'Phase 3 — System Design', weeks:'Wks 5–9', sections:[
+    { icon:'L', iconBg:'#2d1f06', iconColor:'#fbbf24', title:'Low-level design (LLD)', imp:'high', topics:[
+      { type:'learn', name:'SOLID principles', sub:'Single Responsibility · Open/Closed · Liskov Substitution · Interface Segregation · Dependency Inversion' },
+      { type:'learn', name:'Design patterns in depth', sub:'Creational: Singleton, Factory, Builder · Structural: Adapter, Facade, Decorator · Behavioural: Observer, Strategy, Command' },
+      { type:'learn', name:'LLD practice problems', sub:'Design Parking Lot · Elevator System · Library Management · Chess Game · Vending Machine · URL Shortener (class level)' },
+      { type:'learn', name:'UML basics', sub:'Class diagrams · Sequence diagrams · Use case diagrams' },
+    ]},
+    { icon:'H', iconBg:'#2d1f06', iconColor:'#fbbf24', title:'High-level design (HLD)', imp:'high', topics:[
+      { type:'learn', name:'Core HLD concepts', sub:'Scalability · Availability · Reliability · CAP theorem · ACID vs BASE · Consistency models' },
+      { type:'learn', name:'Load balancing & caching', sub:'Round robin · Consistent hashing · Cache-aside · Write-through · TTL · Cache invalidation' },
+      { type:'learn', name:'Database design', sub:'SQL vs NoSQL trade-offs · Sharding · Replication · Indexing · MongoDB deep dive (your strength!)' },
+      { type:'learn', name:'Message queues', sub:'Kafka architecture · Partitions · Consumer groups · At-least-once vs exactly-once · Dead letter queue' },
+      { type:'learn', name:'Microservices patterns', sub:'Service discovery · Circuit breaker · API Gateway · Saga pattern · CQRS · Event sourcing' },
+      { type:'learn', name:'HLD practice problems', sub:'URL Shortener · WhatsApp · Instagram feed · Notification system · Healthcare enrollment (your domain!)' },
+    ]},
+    { icon:'K', iconBg:'#2d1f06', iconColor:'#fbbf24', title:'Kafka deep dive', imp:'high', topics:[
+      { type:'learn', name:'Kafka architecture', sub:'Topics · Partitions · Brokers · ZooKeeper/KRaft · Replication factor' },
+      { type:'learn', name:'Producers & consumers', sub:'Ack modes (0,1,all) · Consumer group rebalancing · Offset management · Commit strategies' },
+      { type:'learn', name:'Kafka in system design', sub:'When to use Kafka · Event sourcing · Exactly-once semantics · Kafka Streams basics' },
+    ]},
+  ]},
+  { id:'p4', color:'#a78bfa', label:'Phase 4 — Spring & Backend', weeks:'Wks 7–10', sections:[
+    { icon:'S', iconBg:'#1a1030', iconColor:'#a78bfa', title:'Spring Boot internals', imp:'high', topics:[
+      { type:'learn', name:'Spring core concepts', sub:'IoC container · Dependency Injection · @Component/@Service/@Repository · Bean lifecycle · Constructor injection' },
+      { type:'learn', name:'Spring Boot auto-configuration', sub:'@SpringBootApplication · Starters · application.properties · Profiles · Actuator' },
+      { type:'learn', name:'Spring MVC & REST', sub:'@RestController · @RequestMapping · @PathVariable · @ControllerAdvice · Filters vs Interceptors' },
+      { type:'learn', name:'Spring Data & JPA', sub:'@Entity · JpaRepository · JPQL · @Transactional · Lazy vs eager · N+1 problem · @Query' },
+      { type:'learn', name:'Spring Security', sub:'Authentication vs authorisation · JWT flow · OAuth2 resource server · @PreAuthorize · CSRF · SecurityFilterChain' },
+    ]},
+    { icon:'M', iconBg:'#1a1030', iconColor:'#a78bfa', title:'MongoDB deep dive', imp:'high', topics:[
+      { type:'learn', name:'MongoDB fundamentals', sub:'Collections · Documents · BSON · Embedded vs referenced · ObjectId' },
+      { type:'learn', name:'Querying & aggregation', sub:'find() · $match · $group · $project · $lookup · $unwind · Aggregation pipeline' },
+      { type:'learn', name:'Indexing & performance', sub:'Single field · Compound · Text · TTL indexes · Explain plans · Index strategies' },
+      { type:'learn', name:'MongoDB with Spring Boot', sub:'MongoRepository · @Document · @Field · MongoTemplate · Transactions' },
+    ]},
+    { icon:'A', iconBg:'#1a1030', iconColor:'#a78bfa', title:'AWS essentials', imp:'med', topics:[
+      { type:'learn', name:'EC2 & compute', sub:'Instance types · Security groups · Auto scaling · Load balancers (ALB/NLB)' },
+      { type:'learn', name:'S3 & Lambda', sub:'Buckets · Pre-signed URLs · S3 events · Serverless basics · Cold starts · Lambda + API Gateway' },
+      { type:'learn', name:'Core AWS for interviews', sub:'VPC basics · IAM roles · RDS basics · SQS vs SNS vs Kafka trade-offs' },
+    ]},
+    { icon:'D', iconBg:'#1a1030', iconColor:'#a78bfa', title:'DevOps & CI/CD', imp:'med', topics:[
+      { type:'learn', name:'Docker', sub:'Images vs containers · Dockerfile · docker-compose · Multi-stage builds · Volumes · Networking' },
+      { type:'learn', name:'Kubernetes basics', sub:'Pods · Deployments · Services · ConfigMaps · HPA · Ingress' },
+      { type:'learn', name:'Jenkins & CI/CD', sub:'Jenkinsfile · Stages · Triggers · Git integration · Maven lifecycle' },
+      { type:'learn', name:'Git advanced', sub:'GitFlow · Rebase vs merge · Cherry-pick · Conflict resolution · PR best practices' },
+    ]},
+  ]},
+  { id:'p5', color:'#f87171', label:'Phase 5 — Behavioural', weeks:'Wks 10–12', sections:[
+    { icon:'B', iconBg:'#2d1010', iconColor:'#f87171', title:'Behavioural (STAR method)', imp:'high', topics:[
+      { type:'learn', name:'STAR framework', sub:'Situation · Task · Action · Result — write 2–3 sentences for each part' },
+      { type:'learn', name:'Leadership stories', sub:'"Led VizLand solo" · "Company-wide VizArch adoption" · "Delivered without senior leadership"' },
+      { type:'learn', name:'Problem-solving stories', sub:'"90% setup time reduction" · "30% load time improvement" · "Production Kafka fixes"' },
+      { type:'learn', name:'Conflict & collaboration', sub:'1 story of disagreement with peer · How you handled it · What you learned' },
+      { type:'learn', name:'Common HR questions', sub:'"Tell me about yourself" · "Why leave AVIZVA?" · "5 year plan" · "Biggest weakness?" · "Salary expectation?"' },
+    ]},
+    { icon:'Q', iconBg:'#2d1010', iconColor:'#f87171', title:'Java & Spring Q&A', imp:'high', topics:[
+      { type:'learn', name:'Top 20 Java questions', sub:'String pool · == vs equals · Hashcode contract · Why String is immutable · Abstract vs interface · ConcurrentHashMap vs synchronized · ThreadLocal' },
+      { type:'learn', name:'Top 15 Spring Boot questions', sub:'How @Autowired works · Bean scopes · @Transactional internals · Lazy vs eager · Circular dependencies · Spring Boot startup process' },
+      { type:'learn', name:'Kafka interview questions', sub:'Consumer goes down? · Ordering guarantee · At-least-once vs exactly-once · Partition selection · Duplicate handling' },
+      { type:'learn', name:'MongoDB interview questions', sub:'Embed vs reference? · Transactions in MongoDB · Aggregation pipeline · Schema evolution' },
+    ]},
+  ]},
+];
+
+let checked = {};
+let currentView = 'all';
+let currentPhase = 'all';
+
+function loadChecked() {
+  try { checked = JSON.parse(localStorage.getItem('shivam_prep_v2') || '{}'); } catch(e) { checked = {}; }
+}
+
+function saveChecked() {
+  try { localStorage.setItem('shivam_prep_v2', JSON.stringify(checked)); } catch(e) {}
+}
+
+function allTopicKeys() {
+  const keys = [];
+  PHASES.forEach(ph => ph.sections.forEach((sec, si) => sec.topics.forEach((_, ti) => {
+    keys.push(`${ph.id}-${si}-${ti}`);
+  })));
+  return keys;
+}
+
+function totalCount() { return allTopicKeys().length; }
+function doneCount() { return allTopicKeys().filter(k => checked[k]).length; }
+
+function updateProgress() {
+  const total = totalCount(), done = doneCount(), left = total - done;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('topPct').textContent = pct + '%';
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statLeft').textContent = left;
+  document.getElementById('statTotal').textContent = total;
+}
+
+function phaseProgress(phId) {
+  let total = 0, done = 0;
+  const ph = PHASES.find(p => p.id === phId);
+  ph.sections.forEach((sec, si) => sec.topics.forEach((_, ti) => {
+    total++;
+    if (checked[`${phId}-${si}-${ti}`]) done++;
+  }));
+  return { total, done };
+}
+
+function toggleTopic(key) {
+  checked[key] = !checked[key];
+  saveChecked();
+  const box = document.querySelector(`[data-key="${key}"] .check-box`);
+  if (box) box.classList.toggle('done', checked[key]);
+  updateProgress();
+  updatePhaseProgress(key.split('-')[0]);
+  if (currentView !== 'all') render();
+}
+
+function updatePhaseProgress(phId) {
+  const el = document.getElementById(`ph-prog-${phId}`);
+  if (!el) return;
+  const { total, done } = phaseProgress(phId);
+  el.textContent = `${done}/${total}`;
+}
+
+function diffTag(d) {
+  return `<span class="tag tag-${d.toLowerCase()}">${d}</span>`;
+}
+
+function buildTopicHTML(topic, key, view) {
+  const isDone = checked[key] || false;
+  if (view === 'done' && !isDone) return '';
+  if (view === 'pending' && isDone) return '';
+  if (view === 'priority') {
+    const sec = findSecForKey(key);
+    if (!sec || sec.imp !== 'high') return '';
+    if (isDone) return '';
+  }
+  const diffs = topic.diff ? topic.diff.map(diffTag).join('') : '';
+  const typeTag = `<span class="tag tag-${topic.type}">${topic.type === 'practice' ? 'Practice' : 'Learn'}</span>`;
+  return `<div class="topic-row" data-key="${key}" onclick="toggleTopic('${key}')">
+    <div class="check-box${isDone ? ' done' : ''}"></div>
+    <div class="topic-content">
+      <div class="topic-name">${topic.name}</div>
+      <div class="topic-sub">${topic.sub}</div>
+      <div class="tags">${typeTag}${diffs}</div>
+    </div>
+  </div>`;
+}
+
+function findSecForKey(key) {
+  const [phId, si] = key.split('-');
+  const ph = PHASES.find(p => p.id === phId);
+  return ph ? ph.sections[parseInt(si)] : null;
+}
+
+function buildSectionHTML(sec, phId, si, view) {
+  const topicsHTML = sec.topics.map((t, ti) => buildTopicHTML(t, `${phId}-${si}-${ti}`, view)).join('');
+  if (!topicsHTML.trim()) return '';
+  const impBadge = sec.imp === 'high'
+    ? `<span class="imp-badge imp-high">Must know</span>`
+    : `<span class="imp-badge imp-med">Important</span>`;
+  const secId = `sec-${phId}-${si}`;
+  return `<div class="section-block">
+    <div class="section-head" onclick="toggleSection('${secId}')">
+      <div class="section-icon" style="background:${sec.iconBg};color:${sec.iconColor}">${sec.icon}</div>
+      <div class="section-title">${sec.title}</div>
+      ${impBadge}
+      <div class="section-chevron" id="arr-${secId}">›</div>
+    </div>
+    <div class="section-body" id="${secId}">${topicsHTML}</div>
+  </div>`;
+}
+
+function buildPhaseHTML(ph, view) {
+  const secsHTML = ph.sections.map((sec, si) => buildSectionHTML(sec, ph.id, si, view)).join('');
+  if (!secsHTML.trim()) return '';
+  const { total, done } = phaseProgress(ph.id);
+  return `<div class="phase-block" data-phase="${ph.id}" ${currentPhase !== 'all' && currentPhase !== ph.id ? 'style="display:none"' : ''}>
+    <div class="phase-header" onclick="togglePhase('ph-body-${ph.id}', 'ph-arr-${ph.id}')">
+      <div class="phase-dot" style="background:${ph.color}"></div>
+      <div class="phase-name">${ph.label}</div>
+      <div class="phase-weeks">${ph.weeks}</div>
+      <div class="phase-prog" id="ph-prog-${ph.id}">${done}/${total}</div>
+      <div class="phase-chevron open" id="ph-arr-${ph.id}">›</div>
+    </div>
+    <div class="phase-sections open" id="ph-body-${ph.id}">${secsHTML}</div>
+  </div>`;
+}
+
+function render() {
+  const html = PHASES.map(ph => buildPhaseHTML(ph, currentView)).join('');
+  const content = document.getElementById('mainContent');
+  if (!html.trim()) {
+    content.innerHTML = `<div class="celebrate"><div class="big">&#127881;</div><p>Nothing here! All ${currentView === 'done' ? 'done topics show here' : 'priority topics are done'}.</p></div>`;
+  } else {
+    content.innerHTML = html;
+  }
+}
+
+function buildTabs() {
+  const tabs = [
+    { id: 'all', label: 'All' },
+    ...PHASES.map(ph => ({ id: ph.id, label: ph.label.split(' — ')[0] + ' ' + ph.label.split('— ')[1] }))
+  ];
+  document.getElementById('tabScroll').innerHTML = tabs.map(t =>
+    `<button class="tab-btn${t.id === currentPhase ? ' active' : ''}" onclick="filterPhase('${t.id}',this)">${t.label}</button>`
+  ).join('');
+}
+
+function filterPhase(phaseId, btn) {
+  currentPhase = phaseId;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.phase-block').forEach(el => {
+    el.style.display = (phaseId === 'all' || el.dataset.phase === phaseId) ? '' : 'none';
+  });
+}
+
+function switchTab(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function toggleSection(secId) {
+  const body = document.getElementById(secId);
+  const arr = document.getElementById(`arr-${secId}`);
+  if (!body) return;
+  body.classList.toggle('open');
+  if (arr) arr.classList.toggle('open');
+}
+
+function togglePhase(bodyId, arrId) {
+  const body = document.getElementById(bodyId);
+  const arr = document.getElementById(arrId);
+  if (!body) return;
+  body.classList.toggle('open');
+  if (arr) arr.classList.toggle('open');
+}
+
+function dismissBanner() {
+  document.getElementById('installBanner').classList.add('hidden');
+  try { localStorage.setItem('banner_dismissed', '1'); } catch(e) {}
+}
+
+function init() {
+  loadChecked();
+  try {
+    if (localStorage.getItem('banner_dismissed') === '1' || window.navigator.standalone) {
+      document.getElementById('installBanner').classList.add('hidden');
+    }
+  } catch(e) {}
+  buildTabs();
+  render();
+  updateProgress();
+}
+
+init();
+</script>
+</body>
+</html>
